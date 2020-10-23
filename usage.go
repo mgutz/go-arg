@@ -64,17 +64,18 @@ func (p *Parser) writeUsageForCommand(w io.Writer, cmd *command) {
 	}
 
 	// write the option component of the usage message
-	for _, spec := range options {
-		// prefix with a space
-		fmt.Fprint(w, " ")
-		if !spec.required {
-			fmt.Fprint(w, "[")
-		}
-		fmt.Fprint(w, synopsis(spec, "--"+spec.long))
-		if !spec.required {
-			fmt.Fprint(w, "]")
-		}
-	}
+	// for _, spec := range options {
+	// 	// prefix with a space
+	// 	fmt.Fprint(w, " ")
+	// 	if !spec.required {
+	// 		fmt.Fprint(w, "[")
+	// 	}
+	// 	fmt.Fprint(w, synopsis(spec, "--"+spec.long))
+	// 	if !spec.required {
+	// 		fmt.Fprint(w, "]")
+	// 	}
+	// }
+	fmt.Fprint(w, " [<option>]...")
 
 	// write the positional component of the usage message
 	for _, spec := range positionals {
@@ -103,10 +104,10 @@ func (p *Parser) writeUsageForCommand(w io.Writer, cmd *command) {
 
 func printTwoCols(w io.Writer, left, help string, defaultVal string, envVal string) {
 	lhs := "  " + left
-	fmt.Fprint(w, lhs)
+	fmt.Fprintf(w, "%-25s", lhs)
 	if help != "" {
 		if len(lhs)+2 < colWidth {
-			fmt.Fprint(w, strings.Repeat(" ", colWidth-len(lhs)))
+			//fmt.Fprint(w, strings.Repeat(" ", colWidth-len(lhs)))
 		} else {
 			fmt.Fprint(w, "\n"+strings.Repeat(" ", colWidth))
 		}
@@ -128,7 +129,10 @@ func printTwoCols(w io.Writer, left, help string, defaultVal string, envVal stri
 	}
 
 	if len(bracketsContent) > 0 {
-		fmt.Fprintf(w, " [%s]", strings.Join(bracketsContent, ", "))
+		if help != "" {
+			fmt.Fprint(w, " ")
+		}
+		fmt.Fprintf(w, "(%s)", strings.Join(bracketsContent, ", "))
 	}
 	fmt.Fprint(w, "\n")
 }
@@ -215,10 +219,15 @@ func (p *Parser) writeHelpForCommand(w io.Writer, cmd *command) {
 }
 
 func (p *Parser) printOption(w io.Writer, spec *spec) {
-	left := synopsis(spec, "--"+spec.long)
-	if spec.short != "" {
-		left += ", " + synopsis(spec, "-"+spec.short)
+	left := ""
+	if spec.short == "" {
+		left = "   "
+	} else {
+		left += "-" + spec.short + ","
 	}
+
+	left += synopsis(spec, "--"+spec.long)
+
 	printTwoCols(w, left, spec.help, spec.defaultVal, spec.env)
 }
 
@@ -226,7 +235,7 @@ func synopsis(spec *spec, form string) string {
 	if spec.boolean {
 		return form
 	}
-	return form + " " + spec.placeholder
+	return form + "=" + spec.placeholder
 }
 
 func ptrTo(s string) *string {
